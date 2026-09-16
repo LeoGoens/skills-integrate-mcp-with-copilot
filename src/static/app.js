@@ -3,6 +3,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const loginButton = document.getElementById("login-button");
+  const loginContainer = document.getElementById("login-container");
+  const loginForm = document.getElementById("login-form");
+  const studentMessage = document.getElementById("student-message");
+  let authToken = null;
 
   // Function to fetch activities from API
   async function fetchActivities() {
@@ -12,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Clear loading message
       activitiesList.innerHTML = "";
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -30,7 +36,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${details.participants
                   .map(
                     (email) =>
-                      `<li><span class="participant-email">${email}</span><button class="delete-btn" data-activity="${name}" data-email="${email}">❌</button></li>`
+                      `<li><span class="participant-email">${email}</span>${
+                        authToken
+                          ? `<button class="delete-btn" data-activity="${name}" data-email="${email}" aria-label="Unregister ${email}">Remove</button>`
+                          : ""
+                      }</li>`
                   )
                   .join("")}
               </ul>
@@ -80,6 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
         )}/unregister?email=${encodeURIComponent(email)}`,
         {
           method: "DELETE",
+          headers: { Authorization: `Bearer ${authToken}` },
         }
       );
 
@@ -97,6 +108,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       messageDiv.classList.remove("hidden");
+
+      if (response.status === 401) {
+        logout();
+      }
 
       // Hide message after 5 seconds
       setTimeout(() => {
@@ -124,6 +139,9 @@ document.addEventListener("DOMContentLoaded", () => {
         )}/signup?email=${encodeURIComponent(email)}`,
         {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
         }
       );
 
@@ -143,6 +161,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       messageDiv.classList.remove("hidden");
 
+      if (response.status === 401) {
+        logout();
+      }
+
       // Hide message after 5 seconds
       setTimeout(() => {
         messageDiv.classList.add("hidden");
@@ -153,6 +175,52 @@ document.addEventListener("DOMContentLoaded", () => {
       messageDiv.classList.remove("hidden");
       console.error("Error signing up:", error);
     }
+  });
+
+  function logout() {
+    authToken = null;
+    loginButton.textContent = "Teacher login";
+    signupForm.classList.add("hidden");
+    studentMessage.classList.remove("hidden");
+    fetchActivities();
+  }
+
+  loginButton.addEventListener("click", () => {
+    if (authToken) {
+      logout();
+      return;
+    }
+
+    loginContainer.classList.toggle("hidden");
+  });
+
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const response = await fetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: document.getElementById("username").value,
+        password: document.getElementById("password").value,
+      }),
+    });
+    const result = await response.json();
+
+    if (!response.ok) {
+      messageDiv.textContent = result.detail || "Unable to log in";
+      messageDiv.className = "error";
+      messageDiv.classList.remove("hidden");
+      return;
+    }
+
+    authToken = result.token;
+    loginButton.textContent = "Log out";
+    loginContainer.classList.add("hidden");
+    signupForm.classList.remove("hidden");
+    studentMessage.classList.add("hidden");
+    loginForm.reset();
+    fetchActivities();
   });
 
   // Initialize app

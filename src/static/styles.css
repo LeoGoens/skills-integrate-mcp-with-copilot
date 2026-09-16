@@ -16,12 +16,24 @@ body {
 }
 
 header {
+  position: relative;
   text-align: center;
   padding: 20px 0;
   margin-bottom: 30px;
   background-color: #1a237e;
   color: white;
   border-radius: 5px;
+}
+
+header button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.login-panel {
+  margin: 0 auto 30px;
+  max-width: 500px;
 }
 
 header h1 {
@@ -125,6 +137,13 @@ section h3 {
   background-color: #ffebee;
 }
 
+.delete-btn {
+  background: none;
+  color: #c62828;
+  font-size: 14px;
+  padding: 2px 5px;
+}
+
 .participants-section p {
   color: #777;
   font-style: italic;
@@ -197,4 +216,11 @@ footer {
   margin-top: 30px;
   padding: 20px;
   color: #666;
+}
+
+@media (max-width: 600px) {
+  header button {
+    position: static;
+    margin-top: 15px;
+  }
 }
